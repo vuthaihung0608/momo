@@ -13,7 +13,7 @@ Dự án áp dụng nguyên tắc **phân tách tuyệt đối giữa Logic nghi
 - File `app.py` và thư mục `pages/`: Chỉ phụ trách hiển thị giao diện Streamlit, đọc dữ liệu từ `st.session_state` và gọi các hàm nghiệp vụ từ `src/`.
 
 ```
-MoneyLens-AI/
+.
 ├── app.py                     # [Member 1] Giao diện chính, nạp file CSV & xem trước dữ liệu
 ├── pages/
 │   ├── overview.py            # [Member 1] Bức tranh tổng quan (KPIs + Biểu đồ dòng tiền)
