@@ -1,0 +1,49 @@
+date,description,amount,type,category
+2026-09-01,Lương part-time trợ giảng tháng 8,4500000,income,Salary
+2026-09-02,Tiền thuê phòng trọ tháng 9,2500000,expense,Housing
+2026-09-03,Highlands Coffee Freeze trà xanh,59000,expense,
+2026-09-04,Cơm tấm sườn bì chả Cô Ba,45000,expense,Food
+2026-09-05,GrabBike đi học Bách Khoa,28000,expense,Transport
+2026-09-07,Bún chả Sinh Từ ngõ 84,55000,expense,Food
+2026-09-09,Xăng xe máy Petrolimex cây xăng số 3,70000,expense,
+2026-09-10,Trợ cấp gia đình gửi qua Vietcombank,3000000,income,Transfer
+2026-09-11,Tiền điện nước tháng 8 phòng trọ,420000,expense,
+2026-09-12,Cà phê Aha gặp nhóm làm đồ án,45000,expense,Food
+2026-09-14,Netflix gói tiêu chuẩn hàng tháng,260000,expense,Entertainment
+2026-09-15,Shopee mua kệ sách và đồ gia dụng,315000,expense,Shopping
+2026-09-17,GrabBike đi làm thêm,32000,expense,Transport
+2026-09-19,Phở Thìn Lò Đúc tái lăn,65000,expense,
+2026-09-22,Mua sách giáo trình Fahasa,185000,expense,Education
+2026-09-25,Bạn Nam chuyển khoản trả tiền ăn trưa,75000,income,Transfer
+2026-09-27,Spotify Premium gói cá nhân,59000,expense,Entertainment
+2026-09-29,Trà sữa Phúc Long Ô Long sữa,60000,expense,
+2026-10-01,Lương part-time trợ giảng tháng 9,4800000,income,Salary
+2026-10-02,Tiền thuê phòng trọ tháng 10,2500000,expense,Housing
+2026-10-03,Highlands Coffee Phin sữa đá,39000,expense,Food
+2026-10-04,Cơm trưa văn phòng sườn nướng,45000,expense,Food
+2026-10-06,GrabCar đi mưa về trọ,65000,expense,
+2026-10-08,Bánh mì chảo Cột Điện Quán,45000,expense,Food
+2026-10-10,Trợ cấp gia đình gửi tháng 10,3000000,income,Transfer
+2026-10-11,Tiền điện nước tháng 9 phòng trọ,390000,expense,Housing
+2026-10-13,Internet wifi FPT hàng tháng,220000,expense,
+2026-10-15,Xem phim CGV Vincom Bà Triệu,120000,expense,Entertainment
+2026-10-16,Thưởng nóng dự án nghiên cứu khoa học,1500000,income,Salary
+2026-10-18,Mua áo sơ mi Uniqlo phỏng vấn,1299000,expense,Shopping
+2026-10-20,Bún đậu mắm tôm ngõ Trạm,50000,expense,Food
+2026-10-22,Xăng xe máy Petrolimex,80000,expense,Transport
+2026-10-25,Chuyển khoản góp tiền lẩu liên hoan,200000,expense,
+2026-10-27,Spotify Premium gói cá nhân,59000,expense,Entertainment
+2026-10-29,GrabBike đi phỏng vấn thực tập,35000,expense,Transport
+2026-11-01,Lương thực tập sinh chính thức tháng 10,6000000,income,Salary
+2026-11-02,Tiền thuê phòng trọ tháng 11,2500000,expense,Housing
+2026-11-03,Highlands Coffee Freeze caramel,65000,expense,Food
+2026-11-04,Cơm niêu Singapore Kombo,85000,expense,Food
+2026-11-06,Khóa học Udemy Data Science Python,299000,expense,Education
+2026-11-08,GrabBike đi làm văn phòng,30000,expense,Transport
+2026-11-10,Thuốc cảm sốt Pharmacity,95000,expense,
+2026-11-11,Tiền điện nước tháng 10 phòng trọ,410000,expense,Housing
+2026-11-13,Internet wifi FPT hàng tháng,220000,expense,Housing
+2026-11-14,Netflix gói tiêu chuẩn hàng tháng,260000,expense,Entertainment
+2026-11-16,Phở bò sốt vang Lý Quốc Sư,60000,expense,
+2026-11-18,Quà sinh nhật từ anh trai,500000,income,Transfer
+2026-11-20,GrabBike đi về cuối tuần,28000,expense,Transport
