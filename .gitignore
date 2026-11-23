@@ -1,8 +1,9 @@
-# Python cache & build artifacts
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
+.Python
 build/
 develop-eggs/
 dist/
@@ -24,25 +25,24 @@ wheels/
 venv/
 ENV/
 env/
-env.bak/
-venv.bak/
 
 # Environment variables & secrets
 .env
 .env.local
+.streamlit/secrets.toml
+*.key
+data/.email_sync.key
 
-# Databases
+# Database & local cache
 *.db
-*.sqlite
+*.db-wal
+*.db-shm
 *.sqlite3
+.cache/
 
-# Operating System files
-.DS_Store
-Thumbs.db
-desktop.ini
-
-# IDE & Editor files
+# IDE & OS
+.agents/
 .vscode/
 .idea/
-*.swp
-*.swo
+.DS_Store
+Thumbs.db

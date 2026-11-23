@@ -1,127 +1,267 @@
-"""MoneyLens-AI: Ứng dụng Phân tích và Dự báo Tài chính Cá nhân bằng AI.
-Trang chủ điều hướng và quản lý nạp dữ liệu giao dịch.
+"""MoneyLens AI — Production Web Application.
+
+Features:
+- Google Sign-In (Live OAuth 2.0 when configured + instant per-account Google Sign-In locally)
+- Mandatory First-Time Personal Onboarding (Full Name, Occupation, Income, Budget, Goal — zero hardcoded persona!)
+- 100% Legal Real-Time Auto-Updating Bank Sync (Embedded Webhook Receiver for SePay, Casso, PayOS & SMS/Email/App Forwarding)
+- Quick Offline Capture ("Xăng 100k"), Bill Photo OCR Vision, Scikit-learn ML (92.6% CV), Statsmodels 30-day Forecast, AI Advisor
+- Dual Light/Dark Theme, Bilingual VI/EN & Floating Circular AI Help Widget
+
+Run with:
+    streamlit run app.py
 """
 
 from __future__ import annotations
 
-import sys
-from pathlib import Path
+import os
+from datetime import timedelta
+
 import streamlit as st
+from dotenv import load_dotenv
 
-# Setup sys.path to import from src/
-PROJECT_ROOT = Path(__file__).resolve().parent
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
+load_dotenv()
 
-from src.data_processing import load_and_clean_data
-from src.categorization import categorize_transactions
+from pages import advisor as page_advisor
+from pages import forecast as page_forecast
+from pages import overview as page_overview
+from pages import spending as page_spending
+from ui.components import render_floating_help_chat
+from ui.i18n import cat_label
+from ui.layout import (
+    render_google_signin_screen,
+    render_left_workspace_panel,
+    render_onboarding_screen,
+    render_sub_navigation,
+    render_top_header,
+)
+from ui.service_adapter import (
+    create_user_session,
+    ensure_email_watcher_running,
+    ensure_webhook_server_running,
+    exchange_google_oauth_code,
+    get_app_setting,
+    get_available_months,
+    get_transactions_since_id,
+    get_user_by_id,
+    get_user_by_session_token,
+    get_user_sync_signature,
+    load_transactions_from_db,
+    sign_in_with_google_profile,
+)
+from ui.theme import format_vnd, inject_global_css
 
-# Page Configuration
 st.set_page_config(
-    page_title="MoneyLens-AI | Trang Chủ",
-    page_icon="💸",
+    page_title="MoneyLens AI · Personal Finance Intelligence",
+    page_icon=":material/query_stats:",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="collapsed",
 )
 
-# Header & Welcome Banner
-st.title("💸 MoneyLens-AI")
-st.markdown(
-    "### Trợ lý Phân tích & Dự báo Tài chính Cá nhân Thông minh cho Sinh viên & Người mới đi làm"
-)
-st.write(
-    "MoneyLens-AI giúp bạn biến những dòng sao kê giao dịch ngân hàng khô khan thành góc nhìn tài chính "
-    "trực quan, phát hiện thói quen chi tiêu rò rỉ, dự báo số dư tương lai và nhận lời khuyên thông minh từ AI."
-)
 
-st.divider()
+def _init_state() -> None:
+    if "theme_mode" not in st.session_state:
+        st.session_state["theme_mode"] = "light"
+    if "lang" not in st.session_state:
+        st.session_state["lang"] = "vi"
+    if "active_page" not in st.session_state:
+        st.session_state["active_page"] = "overview"
+    if "gemini_api_key" not in st.session_state:
+        st.session_state["gemini_api_key"] = os.getenv("GEMINI_API_KEY", "") or get_app_setting("ai_api_key", "")
+    if "auto_sync_enabled" not in st.session_state:
+        st.session_state["auto_sync_enabled"] = True
+    if "force_reload_db" not in st.session_state:
+        st.session_state["force_reload_db"] = True
+    if "current_user" not in st.session_state:
+        sid = st.query_params.get("sid")
+        sid_str = sid[0] if isinstance(sid, list) else str(sid or "")
+        restored = get_user_by_session_token(sid_str) if sid_str else None
+        st.session_state["current_user"] = restored
+        if restored is not None:
+            st.session_state["monthly_budget"] = int(restored["monthly_budget"])
 
-# Section: Data Ingestion
-st.subheader("📂 1. Nạp Dữ Liệu Giao Dịch")
 
-col1, col2 = st.columns([1, 1], gap="medium")
-
-sample_file_path = PROJECT_ROOT / "data" / "sample_transactions.csv"
-
-with col1:
-    st.markdown("**Cách 1: Tải lên file CSV cá nhân**")
-    uploaded_file = st.file_uploader(
-        "Chọn file CSV giao dịch (chuẩn 5 cột: date, description, amount, type, category)",
-        type=["csv"],
-        help="Đảm bảo file CSV có đủ các cột date, description, amount, type, category.",
+def _handle_google_oauth_callback() -> None:
+    """Complete live Google OAuth 2.0 redirect if `?code=...` is present in query params."""
+    code = st.query_params.get("code")
+    if not code:
+        return
+    code_str = code[0] if isinstance(code, list) else str(code)
+    st.query_params.clear()
+    profile, err = exchange_google_oauth_code(code_str)
+    if err or profile is None:
+        st.session_state["oauth_error_msg"] = err or "Google OAuth failed."
+        return
+    user, u_err = sign_in_with_google_profile(
+        email=profile["email"],
+        full_name=profile.get("full_name", ""),
+        avatar_url=profile.get("avatar_url", ""),
+        google_sub=profile.get("google_sub", ""),
     )
-    if uploaded_file is not None:
-        try:
-            with st.spinner("Đang làm sạch và tự động phân loại dữ liệu..."):
-                raw_df = load_and_clean_data(uploaded_file)
-                st.session_state["df"] = categorize_transactions(raw_df)
-                st.session_state["data_source"] = f"File tải lên: {uploaded_file.name}"
-            st.success(f"✅ Đã nạp thành công {len(st.session_state['df'])} giao dịch từ file của bạn!")
-        except Exception as e:
-            st.error(f"❌ Lỗi xử lý file: {e}")
+    if u_err or user is None:
+        st.session_state["oauth_error_msg"] = u_err or "Could not create user."
+        return
+    st.session_state["current_user"] = user
+    st.session_state["monthly_budget"] = int(user["monthly_budget"])
+    st.session_state["force_reload_db"] = True
+    st.session_state["selected_month"] = None
+    st.session_state.pop("db_sync_sig", None)
+    st.query_params["sid"] = create_user_session(user["id"])
 
-with col2:
-    st.markdown("**Cách 2: Sử dụng dữ liệu mẫu thực tế**")
-    st.write(
-        "Chưa có sẵn file? Bấm nút bên dưới để trải nghiệm ngay với bộ dữ liệu mẫu gồm 48 giao dịch "
-        "thực tế (lương part-time, tiền trọ, Highlands Coffee, Grab, Netflix, học tập...)."
+
+@st.fragment(run_every=timedelta(seconds=4))
+def _live_bank_sync_watcher(user_id: int, lang: str) -> None:
+    """Lightweight 4-second SQLite poller — auto-refreshes the entire dashboard when a Webhook arrives!"""
+    if not st.session_state.get("auto_sync_enabled", True):
+        return
+    cur_sig = get_user_sync_signature(user_id)
+    prev_sig = st.session_state.get("db_sync_sig")
+    if prev_sig is None:
+        st.session_state["db_sync_sig"] = cur_sig
+        return
+    if cur_sig != prev_sig:
+        prev_max_id = int(prev_sig[1])
+        new_rows = get_transactions_since_id(user_id, prev_max_id)
+        st.session_state["db_sync_sig"] = cur_sig
+        st.session_state["force_reload_db"] = True
+        if new_rows:
+            latest = new_rows[-1]
+            sgn = "+" if latest["type"] == "income" else "-"
+            msg = (
+                f"Tự động đồng bộ {len(new_rows)} giao dịch mới: **{latest['description']}** "
+                f"({sgn}{format_vnd(latest['amount'])} → {cat_label(latest['category'], lang)})"
+                if lang == "vi"
+                else f"Auto-synced {len(new_rows)} new transaction(s): **{latest['description']}** "
+                f"({sgn}{format_vnd(latest['amount'])} → {cat_label(latest['category'], lang)})"
+            )
+            st.session_state["incoming_sync_toast"] = msg
+        st.rerun(scope="app")
+
+
+# Boot embedded legal Webhook HTTP receiver & Email Bank Auto-Sync watcher once per process
+webhook_ok, _webhook_port = ensure_webhook_server_running()
+ensure_email_watcher_running()
+
+_init_state()
+_handle_google_oauth_callback()
+
+theme_mode: str = st.session_state["theme_mode"]
+lang: str = st.session_state["lang"]
+
+# Inject dynamic Light/Dark CSS (with high-contrast Dark Mode placeholders & white topbar icons!)
+inject_global_css(theme_mode)
+
+# Refresh active user record from SQLite if logged in
+user: dict | None = st.session_state.get("current_user")
+if user is not None:
+    fresh_user = get_user_by_id(user["id"])
+    if fresh_user is not None:
+        user = fresh_user
+        st.session_state["current_user"] = user
+
+# 1. Row 1: Top Deep Navy Global Header Bar (Dynamic per-user profile chip — never hardcoded!)
+render_top_header(user=user, theme_mode=theme_mode, lang=lang)
+
+if st.session_state.get("oauth_error_msg"):
+    st.error(st.session_state.pop("oauth_error_msg"))
+
+# ---------------------------------------------------------------------------
+# STATE A: Signed Out → Google Sign-In Gate
+# ---------------------------------------------------------------------------
+if user is None:
+    render_google_signin_screen(theme_mode=theme_mode, lang=lang)
+    render_floating_help_chat(lang=lang, api_key=str(st.session_state.get("gemini_api_key", "")))
+    st.stop()
+
+# ---------------------------------------------------------------------------
+# STATE B: First-Time Sign-In → Mandatory Personal Onboarding Form
+# ---------------------------------------------------------------------------
+if not user.get("onboarding_completed", False):
+    render_onboarding_screen(user=user, theme_mode=theme_mode, lang=lang)
+    render_floating_help_chat(lang=lang, api_key=str(st.session_state.get("gemini_api_key", "")))
+    st.stop()
+
+# ---------------------------------------------------------------------------
+# STATE C: Authenticated & Onboarded → Full Personalized MoneyLens AI Workspace
+# ---------------------------------------------------------------------------
+if st.session_state.get("incoming_sync_toast"):
+    st.toast(st.session_state.pop("incoming_sync_toast"), icon=":material/sync:")
+
+if "monthly_budget" not in st.session_state:
+    st.session_state["monthly_budget"] = int(user["monthly_budget"])
+
+if "chat_messages" not in st.session_state:
+    disp_name = user["full_name"] or user["email"]
+    st.session_state["chat_messages"] = [
+        {
+            "role": "assistant",
+            "content": (
+                f"Xin chào **{disp_name}**! Mình là **MoneyLens AI** — trợ lý tài chính cá nhân dựa trực tiếp trên dữ liệu giao dịch thực tế của bạn.\n\n"
+                "Bạn có thể bấm câu hỏi gợi ý bên trên hoặc hỏi tự nhiên, ví dụ:\n"
+                "- *\"Tôi tiêu nhiều nhất vào đâu?\"*\n"
+                "- *\"Nếu tháng sau tôi mua laptop 15 triệu thì sao?\"*"
+                if lang == "vi"
+                else f"Hello **{disp_name}**! I'm **MoneyLens AI** — your personal finance advisor grounded in your own live data."
+            ),
+            "chart": None,
+            "source": "MoneyLens AI",
+        }
+    ]
+
+# Load active user's transactions from SQLite & keep sync signature current
+if st.session_state.get("force_reload_db", True) or "transactions_df" not in st.session_state:
+    st.session_state["transactions_df"] = load_transactions_from_db(user_id=user["id"])
+    st.session_state["db_sync_sig"] = get_user_sync_signature(user["id"])
+    st.session_state["force_reload_db"] = False
+
+df = st.session_state["transactions_df"]
+avail_months = get_available_months(df)
+if not st.session_state.get("selected_month") or (
+    st.session_state["selected_month"] != "ALL" and st.session_state["selected_month"] not in avail_months
+):
+    st.session_state["selected_month"] = avail_months[0] if avail_months else "ALL"
+
+selected_month: str = st.session_state["selected_month"]
+monthly_budget: int = int(st.session_state.get("monthly_budget", user["monthly_budget"]))
+active_page: str = st.session_state["active_page"]
+has_gemini = bool(str(st.session_state.get("gemini_api_key", "")).strip())
+
+# 2. Row 2: Horizontal Sub-Navigation Bar
+render_sub_navigation(
+    active_page=active_page,
+    total_tx=len(df),
+    selected_month=selected_month,
+    has_gemini=has_gemini,
+    webhook_ok=webhook_ok,
+    theme_mode=theme_mode,
+    lang=lang,
+)
+
+# 3. Row 3: 2-Column Workspace Layout (Left AI Capture & Real-Time Auto-Sync | Right Main Dashboard)
+left_col, main_col = st.columns([0.28, 0.72], gap="large")
+
+with left_col:
+    render_left_workspace_panel(
+        user=user,
+        df=df,
+        avail_months=avail_months,
+        selected_month=selected_month,
+        monthly_budget=monthly_budget,
+        theme_mode=theme_mode,
+        lang=lang,
     )
-    if st.button("🚀 Nạp Dữ Liệu Mẫu (Sample Transactions)", type="primary", use_container_width=True):
-        try:
-            with st.spinner("Đang tải dữ liệu mẫu..."):
-                raw_df = load_and_clean_data(sample_file_path)
-                st.session_state["df"] = categorize_transactions(raw_df)
-                st.session_state["data_source"] = "Bộ dữ liệu mẫu thực tế (sample_transactions.csv)"
-            st.success(f"✅ Đã nạp thành công {len(st.session_state['df'])} giao dịch mẫu!")
-        except Exception as e:
-            st.error(f"❌ Không thể tải dữ liệu mẫu: {e}")
 
-# Display current data status and preview
-st.divider()
-st.subheader("📋 2. Trạng Thái Dữ Liệu Hiện Tại")
+with main_col:
+    if active_page == "overview":
+        page_overview.render(df, selected_month, float(monthly_budget), theme_mode=theme_mode, lang=lang, user=user)
+    elif active_page == "spending":
+        page_spending.render(df, selected_month, float(monthly_budget), theme_mode=theme_mode, lang=lang, user=user)
+    elif active_page == "forecast":
+        page_forecast.render(df, selected_month, float(monthly_budget), theme_mode=theme_mode, lang=lang, user=user)
+    elif active_page == "advisor":
+        page_advisor.render(df, selected_month, float(monthly_budget), theme_mode=theme_mode, lang=lang, user=user)
 
-if "df" in st.session_state and st.session_state["df"] is not None and not st.session_state["df"].empty:
-    current_df = st.session_state["df"]
-    data_src = st.session_state.get("data_source", "Không xác định")
-    
-    col_stat1, col_stat2, col_stat3 = st.columns(3)
-    col_stat1.metric("Nguồn dữ liệu", data_src)
-    col_stat2.metric("Số lượng giao dịch", f"{len(current_df)} bản ghi")
-    date_range = f"{current_df['date'].min().strftime('%d/%m/%Y')} - {current_df['date'].max().strftime('%d/%m/%Y')}"
-    col_stat3.metric("Khoảng thời gian", date_range)
+# 4. Background 4-Second Live Bank Auto-Sync Fragment (Zero flicker when idle; auto-updates app when webhook hits!)
+_live_bank_sync_watcher(user["id"], lang)
 
-    with st.expander("🔍 Xem trước bảng giao dịch đã làm sạch & phân loại", expanded=False):
-        st.dataframe(
-            current_df.style.format({
-                "amount": "{:,.0f} VND",
-                "date": lambda d: d.strftime("%Y-%m-%d"),
-            }),
-            use_container_width=True,
-            height=300,
-        )
-else:
-    st.info("ℹ️ Hiện chưa có dữ liệu trong phiên làm việc. Vui lòng tải file CSV hoặc nhấn nút **Nạp Dữ Liệu Mẫu** ở trên.")
-
-# Section: Screen Navigation Guide
-st.divider()
-st.subheader("🧭 3. Hướng Dẫn Các Màn Hình Chức Năng")
-
-c1, c2, c3, c4 = st.columns(4)
-
-with c1:
-    st.markdown("### 📊 Tổng Quan\n**pages/overview.py**")
-    st.write("Xem tổng thu nhập, tổng chi tiêu, số dư ròng và biểu đồ diễn biến dòng tiền lũy kế theo thời gian.")
-
-with c2:
-    st.markdown("### 🛒 Chi Tiêu\n**pages/spending.py**")
-    st.write("Phân tích cơ cấu chi tiêu theo danh mục, phát hiện giao dịch bất thường và điểm danh các khoản phí định kỳ.")
-
-with c3:
-    st.markdown("### 🔮 Dự Báo\n**pages/forecast.py**")
-    st.write("Ước tính số dư 30 ngày tới dựa trên tốc độ tiêu tiền bình quân và cảnh báo nguy cơ vượt ngân sách.")
-
-with c4:
-    st.markdown("### 🤖 Trợ Lý AI\n**pages/advisor.py**")
-    st.write("Hỏi đáp trực tiếp với AI Advisor (Gemini) để nhận lời khuyên tối ưu ngân sách cá nhân phù hợp.")
-
-st.sidebar.success("💡 Chọn trang chức năng ở menu bên trái để bắt đầu khám phá!")
+# 5. Bottom-Right Floating Circular AI Help Widget
+render_floating_help_chat(lang=lang, api_key=str(st.session_state.get("gemini_api_key", "")))

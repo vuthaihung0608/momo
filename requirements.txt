@@ -1,8 +1,17 @@
-streamlit>=1.30.0
-plotly>=5.18.0
-pandas>=2.0.0
-numpy>=1.24.0
-scikit-learn>=1.3.0
+# Core Frontend & Visualization (Member 1)
+streamlit>=1.38.0
+plotly>=5.22.0
+pandas>=2.2.0
+numpy>=1.26.0
+
+# Data, ML & Forecasting (Member 2)
+scikit-learn>=1.5.0
 statsmodels>=0.14.0
-google-genai>=0.1.0
+
+# LLM / AI Advisor, Webhook & Email Sync Integration (Member 3)
+google-genai>=1.0.0
 python-dotenv>=1.0.0
+requests>=2.31.0
+starlette>=0.38.0
+uvicorn>=0.30.0
+cryptography>=42.0.0

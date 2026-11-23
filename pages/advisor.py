@@ -1,106 +1,151 @@
-"""Trang Cố vấn Tài chính AI (AI Advisor).
-Giao diện hội thoại tương tác trực tiếp với mô hình Gemini AI để nhận tư vấn tài chính.
-"""
+"""Screen 4 – AI Advisor (Dual Theme, VI/EN, Gemini 2.5 Flash + Data-Grounded Inline Charts)."""
 
 from __future__ import annotations
 
-import sys
-from pathlib import Path
+import html
+import pandas as pd
 import streamlit as st
 
-# Setup sys.path to import from src/
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
-
-from src.data_processing import load_and_clean_data
-from src.categorization import categorize_transactions
-from src.analysis import get_overview_metrics
-from src.forecasting import forecast_balance
-from src.ai_advisor import ask_advisor
-
-st.set_page_config(page_title="AI Advisor | MoneyLens-AI", page_icon="🤖", layout="wide")
+from ui.components import render_ai_banner
+from ui.i18n import fmt_month_label, t
+from ui.service_adapter import ask_advisor, compute_overview_metrics, load_fixed_expenses
+from ui.theme import format_vnd
 
 
-def ensure_data():
-    """Ensure session state contains cleaned data, fallback to sample CSV."""
-    if "df" not in st.session_state or st.session_state["df"] is None or st.session_state["df"].empty:
-        sample_path = PROJECT_ROOT / "data" / "sample_transactions.csv"
-        raw_df = load_and_clean_data(sample_path)
-        st.session_state["df"] = categorize_transactions(raw_df)
-        st.session_state["data_source"] = "Tự động nạp mẫu (sample_transactions.csv)"
+def render(
+    df: pd.DataFrame,
+    selected_month: str,
+    monthly_budget: float,
+    theme_mode: str = "light",
+    lang: str = "vi",
+    user: dict | None = None,
+) -> None:
+    gemini_key = str(st.session_state.get("gemini_api_key", "")).strip()
+    period_label = fmt_month_label(selected_month, lang=lang, is_latest=False)
 
+    h1, h2 = st.columns([3.5, 1.0], vertical_alignment="center")
+    with h1:
+        st.markdown(
+            f"""
+            <h1 class="ml-page-title">{html.escape(t('adv_title', lang))}</h1>
+            <div class="ml-page-subtitle">{html.escape(t('adv_sub', lang))}</div>
+            """,
+            unsafe_allow_html=True,
+        )
+    with h2:
+        if st.button(t("new_chat", lang), icon=":material/refresh:", key="adv_reset_chat", width="stretch"):
+            st.session_state["chat_messages"] = [
+                {
+                    "role": "assistant",
+                    "content": (
+                        "Đã làm mới hội thoại. Bạn muốn MoneyLens AI phân tích điều gì từ dữ liệu tài chính của bạn?"
+                        if lang == "vi"
+                        else "Chat reset! What would you like MoneyLens AI to analyze from your transactions?"
+                    ),
+                    "chart": None,
+                    "source": "MoneyLens AI",
+                }
+            ]
+            st.rerun()
 
-ensure_data()
-df = st.session_state["df"]
+    fixed_expenses = load_fixed_expenses(user["id"]) if user else []
+    metrics = compute_overview_metrics(df, selected_month)
+    render_ai_banner(
+        title=f"{'Trợ lý AI toàn năng · Dữ liệu đang gắn' if lang == 'vi' else 'Universal AI Advisor · Live Context'} ({period_label})",
+        body_html=(
+            f"<strong>{metrics['tx_count']}</strong> {t('tx_short', lang)} · "
+            f"{t('income_opt', lang)}: <strong class='ml-num'>{format_vnd(metrics['income'])}</strong> · "
+            f"{t('expense_opt', lang)}: <strong class='ml-num'>{format_vnd(metrics['expense'])}</strong> · "
+            f"{t('kpi_balance', lang)}: <strong class='ml-num'>{format_vnd(metrics['cumulative_balance'])}</strong> · "
+            f"Budget: <strong class='ml-num'>{format_vnd(monthly_budget)}</strong>"
+        ),
+        icon_name="database",
+        theme_mode=theme_mode,
+    )
 
-st.title("🤖 MoneyLens AI Advisor")
-st.caption(
-    "Trợ lý thông minh phân tích bức tranh tài chính và đưa ra lời khuyên cá nhân hóa bằng Gemini API."
-)
+    st.markdown(f"**{t('quick_prompts_lbl', lang)}**")
 
-# Initialize chat history
-if "messages" not in st.session_state:
-    st.session_state["messages"] = [
-        {
-            "role": "assistant",
-            "content": (
-                "👋 Xin chào! Tôi là **MoneyLens AI**, trợ lý tài chính cá nhân của bạn.\n\n"
-                "Tôi đã đọc và tổng hợp toàn bộ lịch sử thu chi cùng dự báo số dư của bạn. "
-                "Bạn có thể hỏi tôi bất kỳ điều gì, ví dụ:\n"
-                "- *'Dựa trên chi tiêu hiện tại, tôi nên cắt giảm khoản nào?'*\n"
-                "- *'Tháng này tôi có nguy cơ thâm hụt tiền trọ không?'*\n"
-                "- *'Làm sao để người mới đi làm tiết kiệm được 20% lương?'*"
-            ),
-        }
-    ]
+    quick_prompts = (
+        [
+            "Tôi tiêu nhiều nhất vào đâu?",
+            "Nếu tháng sau tôi mua laptop 15 triệu thì sao?",
+            "Tháng này tôi có khoản chi định kỳ nào dễ quên không?",
+            "Danh mục nào của tôi đang tăng bất thường?",
+            "Làm sao để tôi tiết kiệm thêm 2 triệu mỗi tháng?",
+            "Tóm tắt sức khỏe tài chính của tôi hiện tại",
+        ]
+        if lang == "vi"
+        else [
+            "Where do I spend the most money?",
+            "What if I buy a 15 triệu laptop next month?",
+            "Which recurring subscriptions might I forget?",
+            "Which spending category is spiking?",
+            "How can I save an extra 2 triệu per month?",
+            "Summarize my current financial health",
+        ]
+    )
 
-# Render existing chat messages
-for msg in st.session_state["messages"]:
-    with st.chat_message(msg["role"]):
-        st.markdown(msg["content"])
+    pending_prompt: str | None = None
+    row1 = st.columns(3)
+    for idx, col in enumerate(row1):
+        with col:
+            if st.button(quick_prompts[idx], icon=":material/chat_bubble:", key=f"adv_qp_{idx}", width="stretch"):
+                pending_prompt = quick_prompts[idx]
 
-# User Chat Input
-user_query = st.chat_input("Nhập câu hỏi tài chính của bạn tại đây...")
+    row2 = st.columns(3)
+    for idx, col in enumerate(row2, start=3):
+        with col:
+            if st.button(quick_prompts[idx], icon=":material/chat_bubble:", key=f"adv_qp_{idx}", width="stretch"):
+                pending_prompt = quick_prompts[idx]
 
-if user_query:
-    # 1. Append and display user message
-    st.session_state["messages"].append({"role": "user", "content": user_query})
-    with st.chat_message("user"):
-        st.markdown(user_query)
+    st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
 
-    # 2. Compute current metrics & forecast context
-    metrics = get_overview_metrics(df)
-    forecast = forecast_balance(df, days_ahead=30, monthly_budget=5000000.0)
+    for i, msg in enumerate(st.session_state["chat_messages"]):
+        av = ":material/auto_awesome:" if msg["role"] == "assistant" else ":material/person:"
+        with st.chat_message(msg["role"], avatar=av):
+            st.markdown(msg["content"])
+            if msg.get("chart") is not None:
+                st.plotly_chart(msg["chart"], key=f"advisor_chart_{i}", config={"displayModeBar": False})
+            if msg["role"] == "assistant" and msg.get("source"):
+                st.caption(f"{'Nguồn phân tích' if lang == 'vi' else 'Source'}: {msg['source']}")
 
-    # 3. Call AI Advisor
-    with st.chat_message("assistant"):
-        with st.spinner("MoneyLens AI đang phân tích dữ liệu và suy nghĩ câu trả lời..."):
-            response_text = ask_advisor(
-                question=user_query,
-                df=df,
-                metrics=metrics,
-                forecast=forecast,
-            )
-            st.markdown(response_text)
+    user_typed = st.chat_input(t("chat_placeholder", lang))
+    final_prompt = pending_prompt or user_typed
 
-    # 4. Append assistant response to history
-    st.session_state["messages"].append({"role": "assistant", "content": response_text})
+    if final_prompt:
+        prev_hist = list(st.session_state["chat_messages"])
+        st.session_state["chat_messages"].append(
+            {"role": "user", "content": final_prompt, "chart": None, "source": None}
+        )
+        with st.chat_message("user", avatar=":material/person:"):
+            st.markdown(final_prompt)
 
-# Sidebar quick prompts
-with st.sidebar:
-    st.subheader("💡 Câu hỏi gợi ý:")
-    quick_prompts = [
-        "Phân tích top các khoản chi tốn tiền nhất của tôi?",
-        "Tư vấn kế hoạch phân bổ thu nhập 50/30/20 phù hợp?",
-        "Tôi có các khoản phí định kỳ nào cần lưu ý?",
-        "Làm sao để sinh viên hạn chế chi tiêu cà phê trà sữa?",
-    ]
-    for prompt in quick_prompts:
-        if st.button(prompt, use_container_width=True):
-            st.session_state["messages"].append({"role": "user", "content": prompt})
-            metrics = get_overview_metrics(df)
-            forecast = forecast_balance(df, days_ahead=30)
-            answer = ask_advisor(prompt, df, metrics, forecast)
-            st.session_state["messages"].append({"role": "assistant", "content": answer})
+        with st.chat_message("assistant", avatar=":material/auto_awesome:"):
+            with st.spinner("MoneyLens AI đang trả lời..." if lang == "vi" else "MoneyLens AI is thinking..."):
+                result = ask_advisor(
+                    question=final_prompt,
+                    df=df,
+                    selected_month=selected_month,
+                    monthly_budget=monthly_budget,
+                    api_key=gemini_key,
+                    history=prev_hist,
+                    lang=lang,
+                    fixed_expenses=fixed_expenses,
+                )
+            st.markdown(result["answer"])
+            if result.get("chart") is not None:
+                c_idx = len(st.session_state["chat_messages"])
+                st.plotly_chart(result["chart"], key=f"advisor_chart_live_{c_idx}", config={"displayModeBar": False})
+            if result.get("source"):
+                st.caption(f"{'Nguồn phân tích' if lang == 'vi' else 'Source'}: {result['source']}")
+
+        st.session_state["chat_messages"].append(
+            {
+                "role": "assistant",
+                "content": result["answer"],
+                "chart": result.get("chart"),
+                "source": result.get("source", "MoneyLens AI"),
+            }
+        )
+        if pending_prompt:
             st.rerun()
