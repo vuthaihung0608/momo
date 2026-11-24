@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MoneyLens AI — Figma Design System &amp; 4-Screen Prototype Board</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --primary: #4F46E5;
+      --primary-light: #6366F1;
+      --primary-soft: #EEF2FF;
+      --sky: #0EA5E9;
+      --success: #10B981;
+      --success-soft: #ECFDF5;
+      --danger: #EF4444;
+      --danger-soft: #FEF2F2;
+      --warning: #F59E0B;
+      --warning-soft: #FFFBEB;
+      --ink: #0F172A;
+      --muted: #64748B;
+      --border: #E2E8F0;
+      --bg: #F8FAFC;
+      --card: #FFFFFF;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #0F172A;
+      color: var(--ink);
+      min-height: 100vh;
+    }
+    /* Top Figma-style Toolbar */
+    .figma-bar {
+      position: sticky; top: 0; z-index: 50;
+      background: #1E293B; color: #F8FAFC;
+      border-bottom: 1px solid #334155;
+      padding: 12px 24px;
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+    }
+    .figma-title { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 0.95rem; }
+    .figma-badge { background: var(--primary); color: #fff; font-size: 0.72rem; padding: 3px 9px; border-radius: 999px; font-weight: 600; }
+    .tab-group { display: flex; gap: 6px; flex-wrap: wrap; }
+    .tab-btn {
+      border: 1px solid #334155; background: #0F172A; color: #CBD5E1;
+      padding: 7px 14px; border-radius: 999px; font-size: 0.8rem; font-weight: 600;
+      cursor: pointer; transition: all 0.15s ease;
+    }
+    .tab-btn:hover { border-color: #6366F1; color: #fff; }
+    .tab-btn.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+
+    /* Canvas */
+    .canvas { padding: 28px 24px 60px; max-width: 1420px; margin: 0 auto; }
+    .frame-label {
+      color: #94A3B8; font-size: 0.8rem; font-weight: 600; margin-bottom: 10px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .frame {
+      background: var(--bg); border-radius: 20px; overflow: hidden;
+      border: 1px solid #334155;
+      box-shadow: 0 25px 60px -15px rgba(0,0,0,0.55);
+      display: none;
+    }
+    .frame.active { display: block; }
+
+    /* App Shell Mockup */
+    .app-shell { display: grid; grid-template-columns: 260px 1fr; min-height: 760px; }
+    .sidebar {
+      background: #FFFFFF; border-right: 1px solid var(--border); padding: 20px 16px;
+      display: flex; flex-direction: column; gap: 16px;
+    }
+    .brand-card {
+      background: linear-gradient(135deg, #4F46E5 0%, #6366F1 60%, #0EA5E9 100%);
+      color: #fff; padding: 16px; border-radius: 14px;
+    }
+    .brand-card h2 { font-size: 1.05rem; font-weight: 800; }
+    .brand-card p { font-size: 0.74rem; opacity: 0.88; margin-top: 4px; line-height: 1.35; }
+    .nav-list { display: flex; flex-direction: column; gap: 6px; }
+    .nav-item {
+      padding: 10px 12px; border-radius: 10px; font-size: 0.84rem; font-weight: 600;
+      color: #475569; cursor: pointer; display: flex; align-items: center; gap: 8px;
+    }
+    .nav-item.active { background: var(--primary-soft); color: var(--primary); }
+    .upload-box {
+      border: 1.5px dashed #CBD5E1; border-radius: 12px; padding: 14px 12px;
+      text-align: center; background: #F8FAFC; font-size: 0.76rem; color: var(--muted);
+    }
+    .main-area { padding: 24px 28px; display: flex; flex-direction: column; gap: 16px; }
+    .page-head {
+      display: flex; justify-content: space-between; align-items: flex-end;
+      padding-bottom: 14px; border-bottom: 1px solid var(--border);
+    }
+    .page-head h1 { font-size: 1.45rem; font-weight: 800; letter-spacing: -0.02em; }
+    .page-head p { font-size: 0.84rem; color: var(--muted); margin-top: 3px; }
+    .pill {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 4px 10px; border-radius: 999px; font-size: 0.73rem; font-weight: 600;
+    }
+    .pill-primary { background: var(--primary-soft); color: var(--primary); }
+    .pill-success { background: var(--success-soft); color: #059669; }
+    .pill-danger  { background: var(--danger-soft); color: #DC2626; }
+    .pill-warning { background: var(--warning-soft); color: #D97706; }
+
+    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+    .kpi {
+      background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 16px;
+    }
+    .kpi-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .kpi-lbl { font-size: 0.72rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em; }
+    .kpi-val { font-size: 1.32rem; font-weight: 800; margin-bottom: 8px; }
+    .ai-banner {
+      background: linear-gradient(135deg, #EEF2FF 0%, #F0F9FF 100%);
+      border: 1px solid #C7D2FE; border-left: 4px solid var(--primary);
+      border-radius: 12px; padding: 14px 16px; font-size: 0.84rem; line-height: 1.5;
+    }
+    .card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 18px;
+    }
+    .card h3 { font-size: 0.95rem; font-weight: 700; margin-bottom: 4px; }
+    .card .sub { font-size: 0.78rem; color: var(--muted); margin-bottom: 12px; }
+    .grid-2-asym { display: grid; grid-template-columns: 1.45fr 1fr; gap: 16px; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+    /* Table & list items */
+    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    th { text-align: left; color: var(--muted); font-weight: 600; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+    td { padding: 9px 10px; border-bottom: 1px solid #F1F5F9; }
+    .list-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 11px 13px; border-radius: 10px; border: 1px solid var(--border);
+      margin-bottom: 8px; background: #fff; font-size: 0.82rem;
+    }
+    .list-row.danger { border-left: 4px solid var(--danger); }
+    .list-row.warning { border-left: 4px solid var(--warning); }
+    .list-row.primary { border-left: 4px solid var(--primary); }
+
+    /* Design System Swatches */
+    .swatch-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(175px, 1fr)); gap: 12px; margin-top: 12px; }
+    .swatch { background: #fff; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+    .swatch-color { height: 68px; }
+    .swatch-info { padding: 10px 12px; font-size: 0.78rem; }
+    .swatch-info b { display: block; color: var(--ink); }
+    .swatch-info span { color: var(--muted); font-family: monospace; font-size: 0.74rem; }
+
+    /* Chat bubbles */
+    .chat-chip-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .chip {
+      background: #fff; border: 1px solid #CBD5E1; border-radius: 999px;
+      padding: 8px 12px; font-size: 0.78rem; font-weight: 600; color: #1E293B; text-align: center;
+    }
+    .bubble { padding: 14px 16px; border-radius: 14px; font-size: 0.84rem; line-height: 1.55; margin-bottom: 10px; }
+    .bubble-user { background: var(--primary); color: #fff; margin-left: auto; max-width: 68%; }
+    .bubble-ai { background: #fff; border: 1px solid var(--border); max-width: 86%; }
+
+    @media (max-width: 980px) {
+      .app-shell { grid-template-columns: 1fr; }
+      .kpi-grid, .grid-2-asym, .grid-2, .chat-chip-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="figma-bar">
+    <div class="figma-title">
+      <span>🔎 MoneyLens AI — Figma UI/UX Blueprint</span>
+      <span class="figma-badge">Member 1 · Product &amp; Frontend</span>
+    </div>
+    <div class="tab-group">
+      <button class="tab-btn active" onclick="showFrame('ds', this)">00 · Design System</button>
+      <button class="tab-btn" onclick="showFrame('s1', this)">01 · Overview</button>
+      <button class="tab-btn" onclick="showFrame('s2', this)">02 · Spending Insights</button>
+      <button class="tab-btn" onclick="showFrame('s3', this)">03 · Financial Forecast</button>
+      <button class="tab-btn" onclick="showFrame('s4', this)">04 · AI Advisor</button>
+    </div>
+  </div>
+
+  <div class="canvas">
+    <!-- FRAME 00: DESIGN SYSTEM -->
+    <div id="frame-ds" class="frame active">
+      <div style="padding: 32px;">
+        <div class="page-head">
+          <div>
+            <h1>MoneyLens AI — Design System &amp; User Journey Flow</h1>
+            <p>Token màu sắc, phân cấp chữ (Inter), 6 danh mục chi tiêu chuẩn và luồng trải nghiệm 5 bước MVP.</p>
+          </div>
+          <span class="pill pill-primary">Desktop 1440 × 900 · 8px Grid</span>
+        </div>
+
+        <h3 style="margin-top:22px;font-size:1rem;">1. Brand &amp; Semantic Color Tokens</h3>
+        <div class="swatch-grid">
+          <div class="swatch"><div class="swatch-color" style="background:#4F46E5"></div><div class="swatch-info"><b>Brand Primary</b><span>#4F46E5 · Indigo 600</span></div></div>
+          <div class="swatch"><div class="swatch-color" style="background:#0EA5E9"></div><div class="swatch-info"><b>Accent Sky</b><span>#0EA5E9 · Sky 500</span></div></div>
+          <div class="swatch"><div class="swatch-color" style="background:#10B981"></div><div class="swatch-info"><b>Success / Income</b><span>#10B981 · Emerald 500</span></div></div>
+          <div class="swatch"><div class="swatch-color" style="background:#EF4444"></div><div class="swatch-info"><b>Danger / Anomaly</b><span>#EF4444 · Red 500</span></div></div>
+          <div class="swatch"><div class="swatch-color" style="background:#F59E0B"></div><div class="swatch-info"><b>Warning / Recurring</b><span>#F59E0B · Amber 500</span></div></div>
+          <div class="swatch"><div class="swatch-color" style="background:#0F172A"></div><div class="swatch-info"><b>Neutral Ink 900</b><span>#0F172A · Slate 900</span></div></div>
+          <div class="swatch"><div class="swatch-color" style="background:#F8FAFC;border-bottom:1px solid #E2E8F0"></div><div class="swatch-info"><b>Canvas Surface</b><span>#F8FAFC · Slate 50</span></div></div>
+        </div>
+
+        <h3 style="margin-top:26px;font-size:1rem;">2. Canonical 6 Expense Categories (5-Column CSV Schema)</h3>
+        <div class="swatch-grid">
+          <div class="swatch"><div class="swatch-color" style="background:#F97316"></div><div class="swatch-info"><b>🍜 Food (Ăn uống)</b><span>#F97316</span></div></div>
+          <div class="swatch"><div class="swatch-color" style="background:#8B5CF6"></div><div class="swatch-info"><b>🛍️ Shopping (Mua sắm)</b><span>#8B5CF6</span></div></div>
+          <div class="swatch"><div class="swatch-color" style="background:#0EA5E9"></div><div class="swatch-info"><b>🛵 Transport (Di chuyển)</b><span>#0EA5E9</span></div></div>
+          <div class="swatch"><div class="swatch-color" style="background:#4F46E5"></div><div class="swatch-info"><b>🧾 Bills (Hóa đơn)</b><span>#4F46E5</span></div></div>
+          <div class="swatch"><div class="swatch-color" style="background:#EC4899"></div><div class="swatch-info"><b>🎬 Entertainment (Giải trí)</b><span>#EC4899</span></div></div>
+          <div class="swatch"><div class="swatch-color" style="background:#64748B"></div><div class="swatch-info"><b>📦 Other (Khác)</b><span>#64748B</span></div></div>
+        </div>
+
+        <h3 style="margin-top:26px;font-size:1rem;">3. User Journey 5 Bước → Ánh xạ 4 Màn Hình</h3>
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:12px;">
+          <div class="card"><span class="pill pill-primary">Bước 1</span><h3 style="margin-top:8px;">Upload CSV</h3><p class="sub">Tải file 5 cột chuẩn hoặc dùng dữ liệu mẫu sinh viên.</p></div>
+          <div class="card"><span class="pill pill-primary">Bước 2</span><h3 style="margin-top:8px;">AI Understands</h3><p class="sub">Tự động phân loại dòng trống danh mục &amp; chuẩn hóa VND.</p></div>
+          <div class="card"><span class="pill pill-warning">Bước 3</span><h3 style="margin-top:8px;">Spending Patterns</h3><p class="sub">Phát hiện nhóm tăng mạnh, giao dịch bất thường &amp; định kỳ.</p></div>
+          <div class="card"><span class="pill pill-success">Bước 4</span><h3 style="margin-top:8px;">Predict Future</h3><p class="sub">Dự báo số dư 30 ngày &amp; mô phỏng kịch bản What-If.</p></div>
+          <div class="card"><span class="pill pill-primary">Bước 5</span><h3 style="margin-top:8px;">Ask MoneyLens</h3><p class="sub">Hỏi đáp tiếng Việt tự nhiên + biểu đồ phân tích trực tiếp.</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FRAME 01: OVERVIEW -->
+    <div id="frame-s1" class="frame">
+      <div class="app-shell">
+        <aside class="sidebar">
+          <div class="brand-card"><h2>🔎 MoneyLens AI</h2><p>Your money, understood.<br/>Your future, predicted.</p></div>
+          <div class="nav-list">
+            <div class="nav-item active" onclick="jumpTo('s1')">📊 01 · Tổng quan tài chính</div>
+            <div class="nav-item" onclick="jumpTo('s2')">🍩 02 · Phân tích chi tiêu</div>
+            <div class="nav-item" onclick="jumpTo('s3')">📈 03 · Dự báo tài chính</div>
+            <div class="nav-item" onclick="jumpTo('s4')">✨ 04 · Trợ lý AI Advisor</div>
+          </div>
+          <div class="upload-box"><b>📂 Upload CSV (5 cột)</b><br/>Kéo thả hoặc chọn file .csv</div>
+          <div class="card" style="padding:12px;font-size:0.76rem;"><b>Kỳ:</b> Tháng 11/2026<br/><b>Ngân sách:</b> 9.500.000 ₫</div>
+        </aside>
+        <main class="main-area">
+          <div class="page-head">
+            <div><h1>Tổng quan tài chính</h1><p>Nhìn thấu dòng tiền thu – chi, số dư hiện tại và giao dịch gần đây.</p></div>
+            <span class="pill pill-primary">📅 Tháng 11/2026</span>
+          </div>
+          <div class="kpi-grid">
+            <div class="kpi"><div class="kpi-top"><span class="kpi-lbl">Tổng thu nhập</span><span>💰</span></div><div class="kpi-val">12.400.000 ₫</div><span class="pill pill-success">-0.8% vs kỳ trước</span></div>
+            <div class="kpi"><div class="kpi-top"><span class="kpi-lbl">Tổng chi tiêu</span><span>💳</span></div><div class="kpi-val">10.685.000 ₫</div><span class="pill pill-danger">+35.4% vs kỳ trước</span></div>
+            <div class="kpi"><div class="kpi-top"><span class="kpi-lbl">Số dư hiện tại</span><span>🏦</span></div><div class="kpi-val">10.466.000 ₫</div><span class="pill pill-success">Tiết kiệm 13.8%</span></div>
+            <div class="kpi"><div class="kpi-top"><span class="kpi-lbl">Tiến độ ngân sách</span><span>🎯</span></div><div class="kpi-val">112%</div><span class="pill pill-danger">Vượt 1.185.000 ₫</span></div>
+          </div>
+          <div class="ai-banner"><b>✨ Nhận diện nhanh từ MoneyLens AI:</b> Trong Tháng 11/2026, danh mục chiếm tỷ trọng lớn nhất là <b>🛍️ Mua sắm (42.6%)</b>, tăng mạnh +281% so với tháng 10 do đợt sale 11.11.</div>
+          <div class="grid-2-asym">
+            <div class="card">
+              <h3>Biểu đồ dòng tiền theo thời gian</h3><p class="sub">Số dư tích lũy &amp; so sánh Thu vs Chi</p>
+              <svg viewBox="0 0 540 180" width="100%">
+                <defs><linearGradient id="g1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#4F46E5" stop-opacity="0.28"/><stop offset="100%" stop-color="#4F46E5" stop-opacity="0.02"/></linearGradient></defs>
+                <path d="M10,130 C70,50 130,65 190,82 C250,95 310,135 370,115 C430,90 480,78 530,88 L530,170 L10,170 Z" fill="url(#g1)"/>
+                <path d="M10,130 C70,50 130,65 190,82 C250,95 310,135 370,115 C430,90 480,78 530,88" fill="none" stroke="#4F46E5" stroke-width="3"/>
+              </svg>
+            </div>
+            <div class="card">
+              <h3>Tỷ trọng chi tiêu nhanh</h3><p class="sub">6 danh mục chi tiêu chuẩn</p>
+              <svg viewBox="0 0 220 180" width="100%">
+                <circle cx="110" cy="90" r="58" fill="none" stroke="#E2E8F0" stroke-width="22"/>
+                <circle cx="110" cy="90" r="58" fill="none" stroke="#8B5CF6" stroke-width="22" stroke-dasharray="155 365" transform="rotate(-90 110 90)"/>
+                <circle cx="110" cy="90" r="58" fill="none" stroke="#4F46E5" stroke-width="22" stroke-dasharray="128 365" stroke-dashoffset="-155" transform="rotate(-90 110 90)"/>
+                <circle cx="110" cy="90" r="58" fill="none" stroke="#F97316" stroke-width="22" stroke-dasharray="58 365" stroke-dashoffset="-283" transform="rotate(-90 110 90)"/>
+                <text x="110" y="88" text-anchor="middle" font-size="14" font-weight="800" fill="#0F172A">10.69 tr ₫</text>
+                <text x="110" y="104" text-anchor="middle" font-size="10" fill="#64748B">Tổng chi</text>
+              </svg>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Giao dịch gần đây</h3><p class="sub">Dấu ✨ biểu thị giao dịch có cột category trống đã được AI tự phân loại</p>
+            <table>
+              <thead><tr><th>Ngày</th><th>Mô tả</th><th>Danh mục</th><th>Loại</th><th>Số tiền</th></tr></thead>
+              <tbody>
+                <tr><td>21/11/2026</td><td>Highlands Coffee hoàn thiện demo</td><td>🍜 Ăn uống ✨</td><td>🔴 Chi tiêu</td><td>-55.000 ₫</td></tr>
+                <tr><td>20/11/2026</td><td>Tiền điện nước phòng trọ</td><td>🧾 Hóa đơn ✨</td><td>🔴 Chi tiêu</td><td>-475.000 ₫</td></tr>
+                <tr><td>16/11/2026</td><td>Freelance hỗ trợ làm landing page</td><td>💰 Thu nhập</td><td>🟢 Thu nhập</td><td>+1.400.000 ₫</td></tr>
+                <tr><td>11/11/2026</td><td>Shopee 11.11 - Tai nghe Sony chống ồn</td><td>🛍️ Mua sắm</td><td>🔴 Chi tiêu</td><td>-2.650.000 ₫</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <!-- FRAME 02: SPENDING INSIGHTS -->
+    <div id="frame-s2" class="frame">
+      <div class="app-shell">
+        <aside class="sidebar">
+          <div class="brand-card"><h2>🔎 MoneyLens AI</h2><p>Your money, understood.<br/>Your future, predicted.</p></div>
+          <div class="nav-list">
+            <div class="nav-item" onclick="jumpTo('s1')">📊 01 · Tổng quan tài chính</div>
+            <div class="nav-item active" onclick="jumpTo('s2')">🍩 02 · Phân tích chi tiêu</div>
+            <div class="nav-item" onclick="jumpTo('s3')">📈 03 · Dự báo tài chính</div>
+            <div class="nav-item" onclick="jumpTo('s4')">✨ 04 · Trợ lý AI Advisor</div>
+          </div>
+        </aside>
+        <main class="main-area">
+          <div class="page-head">
+            <div><h1>Phân tích thói quen chi tiêu</h1><p>Top danh mục, xu hướng tăng giảm, giao dịch bất thường và chi phí định kỳ.</p></div>
+            <span class="pill pill-primary">🍩 Spending Insights</span>
+          </div>
+          <div class="kpi-grid">
+            <div class="kpi"><div class="kpi-top"><span class="kpi-lbl">Tổng chi tiêu</span><span>💸</span></div><div class="kpi-val">10.685.000 ₫</div><span class="pill pill-primary">5 danh mục</span></div>
+            <div class="kpi"><div class="kpi-top"><span class="kpi-lbl">Danh mục lớn nhất</span><span>🏆</span></div><div class="kpi-val">🛍️ Mua sắm</div><span class="pill pill-primary">42.6% tổng chi</span></div>
+            <div class="kpi"><div class="kpi-top"><span class="kpi-lbl">Giao dịch bất thường</span><span>🚨</span></div><div class="kpi-val">2 giao dịch</div><span class="pill pill-danger">Cần xem lại</span></div>
+            <div class="kpi"><div class="kpi-top"><span class="kpi-lbl">Chi định kỳ / tháng</span><span>🔁</span></div><div class="kpi-val">4.139.333 ₫</div><span class="pill pill-warning">7 khoản lặp lại</span></div>
+          </div>
+          <div class="ai-banner"><b>✨ Phát hiện tăng đột biến:</b> <b>🛍️ Mua sắm</b> tăng <b>+281%</b> · <b>🍜 Ăn uống</b> tăng <b>+27%</b> so với tháng 10.</div>
+          <div class="grid-2">
+            <div class="card">
+              <h3>🚨 Giao dịch bất thường phát hiện</h3><p class="sub">Vượt xa mức chi trung bình danh mục (&gt;2.2x)</p>
+              <div class="list-row danger"><div><b>Shopee 11.11 - Tai nghe Sony chống ồn</b><div style="font-size:0.74rem;color:#64748B">11/11/2026 · 🛍️ Mua sắm · Gấp 6.9x TB</div></div><div style="text-align:right"><b>2.650.000 ₫</b><div><span class="pill pill-danger">Gấp 6.9x TB</span></div></div></div>
+              <div class="list-row danger"><div><b>MoMo thanh toán lẩu băng chuyền</b><div style="font-size:0.74rem;color:#64748B">13/11/2026 · 🍜 Ăn uống · Gấp 3.6x TB</div></div><div style="text-align:right"><b>460.000 ₫</b><div><span class="pill pill-danger">Gấp 3.6x TB</span></div></div></div>
+            </div>
+            <div class="card">
+              <h3>🔁 Chi tiêu định kỳ &amp; Subscriptions</h3><p class="sub">Tự động nhận diện các khoản lặp lại qua nhiều tháng</p>
+              <div class="list-row primary"><div><b>Tiền thuê phòng trọ</b><div style="font-size:0.74rem;color:#64748B">🧾 Hóa đơn · ~38.4 tr ₫/năm</div></div><b>3.200.000 ₫/th</b></div>
+              <div class="list-row warning"><div><b>Netflix Standard</b><div style="font-size:0.74rem;color:#64748B">🎬 Giải trí · ~1.3 tr ₫/năm · Kỳ tới 08/12</div></div><b>108.000 ₫/th</b></div>
+              <div class="list-row warning"><div><b>Spotify Premium</b><div style="font-size:0.74rem;color:#64748B">🎬 Giải trí · ~708k ₫/năm · Kỳ tới 05/12</div></div><b>59.000 ₫/th</b></div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <!-- FRAME 03: FINANCIAL FORECAST -->
+    <div id="frame-s3" class="frame">
+      <div class="app-shell">
+        <aside class="sidebar">
+          <div class="brand-card"><h2>🔎 MoneyLens AI</h2><p>Your money, understood.<br/>Your future, predicted.</p></div>
+          <div class="nav-list">
+            <div class="nav-item" onclick="jumpTo('s1')">📊 01 · Tổng quan tài chính</div>
+            <div class="nav-item" onclick="jumpTo('s2')">🍩 02 · Phân tích chi tiêu</div>
+            <div class="nav-item active" onclick="jumpTo('s3')">📈 03 · Dự báo tài chính</div>
+            <div class="nav-item" onclick="jumpTo('s4')">✨ 04 · Trợ lý AI Advisor</div>
+          </div>
+        </aside>
+        <main class="main-area">
+          <div class="page-head">
+            <div><h1>Dự báo tài chính &amp; Kịch bản chi tiêu</h1><p>Projected Cash Balance · Vùng xanh dương an toàn · Vùng đỏ cảnh báo âm số dư.</p></div>
+            <span class="pill pill-primary">📈 30 ngày tới</span>
+          </div>
+          <div class="kpi-grid">
+            <div class="kpi"><div class="kpi-top"><span class="kpi-lbl">Số dư dự báo cuối tháng</span><span>🔮</span></div><div class="kpi-val">8.960.585 ₫</div><span class="pill pill-danger">Nguy cơ vượt ngân sách</span></div>
+            <div class="kpi"><div class="kpi-top"><span class="kpi-lbl">Dự báo chi tháng tới</span><span>📅</span></div><div class="kpi-val">9.148.000 ₫</div><span class="pill pill-primary">TB 165k/ngày</span></div>
+            <div class="kpi"><div class="kpi-top"><span class="kpi-lbl">Rủi ro vượt ngân sách</span><span>⚠️</span></div><div class="kpi-val">95%</div><span class="pill pill-danger">Rủi ro cao</span></div>
+            <div class="kpi"><div class="kpi-top"><span class="kpi-lbl">Hóa đơn sắp tới</span><span>🧾</span></div><div class="kpi-val">4.139.333 ₫</div><span class="pill pill-warning">Trong 30 ngày</span></div>
+          </div>
+          <div class="grid-2-asym">
+            <div class="card">
+              <h3>Biểu đồ dự báo số dư (Kịch bản mua Laptop 15tr)</h3><p class="sub">Minh họa trực quan vùng xanh dương / vùng đỏ thâm hụt sau mốc Hôm nay</p>
+              <svg viewBox="0 0 540 200" width="100%">
+                <line x1="10" y1="120" x2="530" y2="120" stroke="#94A3B8" stroke-dasharray="4 4"/>
+                <line x1="250" y1="10" x2="250" y2="190" stroke="#4F46E5" stroke-dasharray="5 5" stroke-width="1.8"/>
+                <text x="256" y="24" font-size="11" font-weight="700" fill="#4F46E5">Hôm nay (21/11)</text>
+                <path d="M10,85 L90,52 L170,68 L250,58 L330,72 L370,120 L10,120 Z" fill="rgba(16,185,129,0.28)"/>
+                <path d="M370,120 L405,172 L470,152 L530,132 L530,120 Z" fill="rgba(239,68,68,0.36)"/>
+                <path d="M10,85 L90,52 L170,68 L250,58 L330,72 L370,120 L405,172 L470,152 L530,132" fill="none" stroke="#0F172A" stroke-width="2.5"/>
+              </svg>
+            </div>
+            <div class="card">
+              <h3>🎛️ What-If Simulator</h3><p class="sub">Preset nhanh &amp; thanh trượt điều chỉnh</p>
+              <div style="display:flex;gap:6px;margin-bottom:12px;">
+                <span class="pill pill-success">🌱 Tiết kiệm</span>
+                <span class="pill pill-danger">💻 Mua Laptop 15tr</span>
+                <span class="pill pill-primary">↩️ Mặc định</span>
+              </div>
+              <div style="font-size:0.8rem;color:#334155;line-height:2;">
+                🍜 Giảm Ăn uống: <b>0%</b><br/>
+                🛍️ Giảm Mua sắm: <b>0%</b><br/>
+                🛒 Khoản mua lớn: <b>15.000.000 ₫</b>
+              </div>
+              <div style="margin-top:12px;background:#FEF2F2;padding:12px;border-radius:10px;color:#DC2626;font-size:0.82rem;">
+                <b>Số dư sau 30 ngày: -1.491.382 ₫</b><br/>Cảnh báo thâm hụt nếu trả 1 lần!
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <!-- FRAME 04: AI ADVISOR -->
+    <div id="frame-s4" class="frame">
+      <div class="app-shell">
+        <aside class="sidebar">
+          <div class="brand-card"><h2>🔎 MoneyLens AI</h2><p>Your money, understood.<br/>Your future, predicted.</p></div>
+          <div class="nav-list">
+            <div class="nav-item" onclick="jumpTo('s1')">📊 01 · Tổng quan tài chính</div>
+            <div class="nav-item" onclick="jumpTo('s2')">🍩 02 · Phân tích chi tiêu</div>
+            <div class="nav-item" onclick="jumpTo('s3')">📈 03 · Dự báo tài chính</div>
+            <div class="nav-item active" onclick="jumpTo('s4')">✨ 04 · Trợ lý AI Advisor</div>
+          </div>
+        </aside>
+        <main class="main-area">
+          <div class="page-head">
+            <div><h1>Trợ lý tài chính MoneyLens AI</h1><p>Hỏi bằng ngôn ngữ tự nhiên và nhận phân tích dựa trên số liệu thực tế.</p></div>
+            <span class="pill pill-primary">✨ Ask MoneyLens</span>
+          </div>
+          <div class="chat-chip-grid">
+            <div class="chip">💬 Tôi tiêu nhiều nhất vào đâu?</div>
+            <div class="chip">💬 Nếu tháng sau tôi mua laptop 15 triệu thì sao?</div>
+            <div class="chip">💬 Khoản chi định kỳ nào dễ quên?</div>
+          </div>
+          <div class="card" style="background:#F8FAFC;">
+            <div class="bubble bubble-user">Nếu tháng sau tôi mua laptop 15 triệu thì sao?</div>
+            <div class="bubble bubble-ai">
+              <b>📊 Phân tích kịch bản mua sắm 15.000.000 ₫</b><br/><br/>
+              • Số dư tích lũy hiện tại: <b>10.466.000 ₫</b><br/>
+              • Dự báo số dư 30 ngày tới (không mua): <b>13.508.618 ₫</b><br/>
+              • Dự báo nếu chi ngay 15tr: <b style="color:#DC2626">-1.491.382 ₫ (Thâm hụt 1.491.382 ₫)</b><br/><br/>
+              <b>💡 Khuyến nghị:</b> Cân nhắc trả góp 0% trong 6 tháng (~2.500.000 ₫/tháng) hoặc tích lũy thêm 2–3 tháng để giữ dòng tiền luôn dương.
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function showFrame(id, btn) {
+      document.querySelectorAll('.frame').forEach(f => f.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('frame-' + id).classList.add('active');
+      if (btn) btn.classList.add('active');
+    }
+    function jumpTo(id) {
+      const idxMap = { ds: 0, s1: 1, s2: 2, s3: 3, s4: 4 };
+      const btns = document.querySelectorAll('.tab-btn');
+      showFrame(id, btns[idxMap[id]]);
+    }
+  </script>
+</body>
+</html>
